@@ -1,0 +1,170 @@
+
+/* 引入样式资产中的变量 */
+:root {
+  /* 字体大小变量 */
+  --font-size-xs: 12px;      /* 极小文本 */
+  --font-size-sm: 14px;      /* 小号文本 */
+  --font-size-md: 18px;      /* 正文 */
+  --font-size-lg: 18px;      /* 大号文本 */
+  --font-size-xl: 20px;      /* 特大文本 */
+  --font-size-2xl: 24px;     /* 大标题 */
+  --font-size-3xl: 32px;     /* 特大标题 */
+  --font-size-4xl: 40px;     /* 超大标题 */
+  --font-size-5xl: 48px;     /* 页面标题 */
+  
+  /* 标题字体大小 */
+  --font-size-h1: var(--font-size-5xl);
+  --font-size-h2: var(--font-size-4xl);
+  --font-size-h3: var(--font-size-3xl);
+  --font-size-h4: var(--font-size-2xl);
+  --font-size-h5: var(--font-size-xl);
+  --font-size-h6: var(--font-size-lg);
+  
+  /* 特殊用途字体大小 */
+  --font-size-chart-label: 14px;    /* 图表轴标签 */
+  --font-size-chart-tick: 13px;     /* 图表刻度 */
+  --font-size-badge: 12px;          /* 徽标 */
+  --font-size-tab: 14px;            /* 标签页 */
+  --font-size-stat-label: 16px;     /* 统计标签 */
+  --font-size-stat-number: 38px;    /* 统计数字 */
+  --font-size-stat-icon: 45px;      /* 统计图标 */
+  
+  /* 主色调 - iPhone风格 */
+  --primary-color: #007AFF;
+  --primary-dark: #0056CC;
+  --primary-light: #4DA3FF;
+
+  /* 渐变色 */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --gradient-dark: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  --gradient-button: linear-gradient(145deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.05) 100%);
+
+  /* 背景渐变 */
+  --bg-gradient: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
+  --card-gradient: linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+
+  /* 中性色 - 深色系 */
+  --bg-primary: #000000;
+  --bg-secondary: rgba(28, 28, 30, 0.9);
+  --bg-tertiary: rgba(44, 44, 46, 0.8);
+
+  /* 文字颜色 */
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --text-muted: rgba(255, 255, 255, 0.6);
+  --text-disabled: rgba(255, 255, 255, 0.3);
+
+  /* 状态颜色 */
+  --success-color: #30D158;
+  --warning-color: #FF9F0A;
+  --error-color: #FF453A;
+  --info-color: #64D2FF;
+
+  /* 阴影效果 */
+  --shadow-small: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-large: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 20px rgba(0, 122, 255, 0.3);
+  --shadow-button: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --shadow-button-hover: 0 6px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  --shadow-button-active: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  /* 毛玻璃效果 */
+  --blur-backdrop: blur(20px);
+  --blur-light: blur(10px);
+
+  /* 圆角 */
+  --radius-small: 8px;
+  --radius-medium: 12px;
+  --radius-large: 20px;
+  --radius-xl: 28px;
+  --radius-button: 14px;
+  --radius-pill: 50px;
+
+  /* 动画 */
+  --transition-fast: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  --transition-smooth: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  /* 保留原有的一些变量 */
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: var(--primary-color);
+  text-decoration: inherit;
+  transition: var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-light);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  line-height: 1.1;
+}
+
+button {
+  border-radius: var(--radius-button);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 0.6em 1.2em;
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  font-family: inherit;
+  background: var(--gradient-button);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-button);
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-button-hover);
+}
+
+button:focus,
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-button-active);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+

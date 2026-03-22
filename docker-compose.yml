@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: jy_data_test1
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - '3306:3306'
+
+  api:
+    build: ./server
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    env_file:
+      - ./server/.env.example
+    depends_on:
+      - db
+
+volumes:
+  db_data:

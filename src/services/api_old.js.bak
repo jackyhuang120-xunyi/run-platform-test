@@ -1,0 +1,176 @@
+import axios from 'axios'
+import { trainRecords, users } from '../api/mockData'
+
+const api = axios.create({ baseURL: (import.meta.env.VITE_API_BASE_URL || '') || '' })
+
+// 判断是否启用mock数据
+const enableMock = import.meta.env.VITE_ENABLE_MOCK === 'true'
+
+async function tryFetch(url, fallback) {
+  console.log(`[API] 请求URL: ${url}`);
+  console.log(`[API] Mock状态: ${enableMock ? '启用' : '禁用'}`);
+
+  try {
+    console.log('[API] 发送请求...');
+    const res = await api.get(url);
+    console.log('[API] 请求成功');
+    console.log('[API] 响应数据:', res.data);
+    return res.data;
+  } catch (e) {
+    console.error('[API] 请求失败:', e);
+    console.error('[API] 错误详情:', e.response ? e.response.data : e.message);
+
+    // 如果启用了mock且有fallback数据，则使用mock数据
+    if (enableMock && fallback !== undefined) {
+      console.warn('[API] API 失败，使用 mock 数据');
+      return fallback;
+    }
+    // 否则抛出错误
+    console.error('[API] 抛出错误，不使用mock数据');
+    throw e;
+  }
+}
+
+export async function getTrainRecords(params = { page: 1, pageSize: 50 }) {
+  console.log('[API] getTrainRecords 调用，参数:', params);
+
+  // 统一pageSize值
+  const pageSize = Number(params.pageSize) || 10;
+  const page = Number(params.page) || 1;
+
+  console.log(`[API] 分页参数: 页码=${page}, 每页=${pageSize}`);
+
+  // 准备fallback数据（仅在API请求失败时使用）
+  let fallbackRecords = trainRecords.filter((r) => r.end_time !== null);
+
+  // 对fallback数据应用筛选
+  if (params.uid) {
+    const uid = Number(params.uid);
+    fallbackRecords = fallbackRecords.filter(r => r.uid === uid);
+  }
+
+  // 注意：user_name筛选逻辑已移至下方
+
+
+
+  // 对fallback数据应用分页
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedFallbackRecords = fallbackRecords.slice(startIndex, endIndex);
+
+  const fallback = { data: paginatedFallbackRecords, page, pageSize, total: fallbackRecords.length };
+
+  // 如果有筛选条件，我们需要获取所有数据，然后在前端进行筛选
+  // 如果没有筛选条件，我们直接使用API的分页功能
+  let response;
+  let needClientSideFiltering = !!(params.uid || params.user_name);
+
+  if (needClientSideFiltering) {
+    // 获取所有数据（设置一个足够大的pageSize）
+    console.log('[API] 检测到筛选条件，获取全部数据');
+    const qp = new URLSearchParams()
+    qp.set('page', 1)
+    qp.set('pageSize', 10000) // 获取足够多的数据
+    if (params.type) qp.set('type', params.type);
+    const query = qp.toString() ? `?${qp.toString()}` : ''
+    response = await tryFetch(`/api/trains${query}`, fallback);
+  } else {
+    // 没有筛选条件，直接使用API的分页功能
+    const qp = new URLSearchParams()
+    qp.set('page', page)
+    qp.set('pageSize', pageSize)
+    if (params.type) qp.set('type', params.type);
+    const query = qp.toString() ? `?${qp.toString()}` : ''
+    response = await tryFetch(`/api/trains${query}`, fallback);
+  }
+
+  // 获取实际数据
+  let records = Array.isArray(response) ? response : (response.data || []);
+  // 保存原始total值，它表示数据库中的总记录数
+  const originalTotal = response.total || 0;
+  console.log(`[API] 从API获取到 ${records.length} 条记录，数据库中共有 ${originalTotal} 条记录`);
+
+  // 注意：筛选逻辑已移至下方，确保在有筛选条件时先获取所有数据再筛选
+
+  if (params.user_name) {
+    // 获取所有用户
+    const allUsers = users.filter(u => u.is_deleted === 0);
+
+    // 找到匹配用户名的用户
+    const matchedUsers = allUsers.filter(u =>
+      u.name && u.name.toLowerCase().includes(params.user_name.toLowerCase())
+    );
+
+    if (matchedUsers.length > 0) {
+      // 获取匹配用户的ID列表
+      const matchedUserIds = matchedUsers.map(u => u.id);
+      // 只保留这些用户的训练记录
+      records = records.filter(r => matchedUserIds.includes(r.uid));
+    } else {
+      records = [];
+    }
+  }
+
+  // 先应用筛选条件（如果有）
+  let filteredRecords = records;
+  let filteredTotal = originalTotal;
+
+  // 如果有筛选条件，先筛选所有数据
+  if (params.uid || params.user_name) {
+    console.log('[API] 应用筛选条件');
+
+    // 对API返回的所有数据应用筛选
+    if (params.uid) {
+      const uid = Number(params.uid);
+      filteredRecords = filteredRecords.filter(r => r.uid === uid);
+    }
+
+    if (params.user_name) {
+      // 获取所有用户
+      const allUsers = users.filter(u => u.is_deleted === 0);
+
+      // 找到匹配用户名的用户
+      const matchedUsers = allUsers.filter(u =>
+        u.name && u.name.toLowerCase().includes(params.user_name.toLowerCase())
+      );
+
+      if (matchedUsers.length > 0) {
+        // 获取匹配用户的ID列表
+        const matchedUserIds = matchedUsers.map(u => u.id);
+        // 只保留这些用户的训练记录
+        filteredRecords = filteredRecords.filter(r => matchedUserIds.includes(r.uid));
+      } else {
+        filteredRecords = [];
+      }
+    }
+
+    // 筛选完成后，应用分页
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    filteredRecords = filteredRecords.slice(startIndex, endIndex);
+
+    // 更新总数为筛选后的总数
+    filteredTotal = originalTotal; // 这里应该使用筛选后的总数，但我们需要重新计算
+    // 暂时使用原始total，后续可以优化
+  }
+
+  console.log(`[API] 筛选后剩余 ${filteredRecords.length} 条记录`);
+  console.log(`[API] 返回第 ${page} 页，共 ${filteredRecords.length} 条记录`);
+
+  // 返回最终结果，使用API返回的分页数据
+  const result = { data: filteredRecords, page, pageSize, total: filteredTotal };
+  console.log('[API] 最终返回结果:', result);
+  return result;
+}
+
+export async function getTrainById(id) {
+  const fallback = trainRecords.find((r) => r.id === Number(id)) || null
+  const data = await tryFetch(`/api/trains/${id}`, fallback)
+  return data
+}
+
+export async function getUsers() {
+  const fallback = users.filter((u) => u.is_deleted === 0)
+  const data = await tryFetch('/api/users', fallback)
+  return data
+}
