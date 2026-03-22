@@ -264,6 +264,16 @@ export async function getUsers() {
   return data
 }
 
+export async function createUser(userData) {
+  try {
+    const res = await api.post('/api/users', userData);
+    return res.data;
+  } catch (e) {
+    console.error('[API] 创建用户失败:', e);
+    throw e;
+  }
+}
+
 export async function getUserById(id) {
   const fallback = users.find((u) => u.id === Number(id)) || null
   const data = await tryFetch(`/api/users/${id}`, fallback)

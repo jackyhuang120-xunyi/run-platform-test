@@ -371,6 +371,57 @@ app.get('/api/users/:id', [param('id').isInt().toInt()], handleValidation, async
   }
 })
 
+// == 新增：新建用户接口 ==
+app.post('/api/users', async (req, res) => {
+  try {
+    const { 
+      name, gender, age, height, weight, phone, 
+      id_number, group, birthday, remark, description 
+    } = req.body;
+    
+    // 强制姓名非空
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ error: 'invalid_parameters', message: '缺少必填字段: name (姓名)' });
+    }
+
+    const fields = [
+      'name', 'gender', 'age', 'height', 'weight', 'phone', 
+      'id_number', '\`group\`', 'birthday', 'remark', 'description'
+    ];
+    // 空字符或未定义时转换 null
+    const val = (v) => v === undefined || v === '' ? null : v;
+    
+    const values = [
+      name.trim(), 
+      val(gender), 
+      val(age), 
+      val(height), 
+      val(weight), 
+      val(phone), 
+      val(id_number), 
+      val(group), 
+      val(birthday), 
+      val(remark), 
+      val(description)
+    ];
+    
+    const placeholders = fields.map(() => '?').join(', ');
+    const sql = `INSERT INTO \`user\` (${fields.join(', ')}) VALUES (${placeholders})`;
+
+    const [result] = await pool.query(sql, values);
+
+    // 回送刚刚创建的人员ID
+    res.json({ 
+      success: true, 
+      message: '用户档案组建成功', 
+      user_id: result.insertId 
+    });
+  } catch (err) {
+    console.error('[API] 创建用户记录失败:', err);
+    res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+});
+
 // 获取所有组别
 app.get('/api/groups', async (req, res) => {
   try {
