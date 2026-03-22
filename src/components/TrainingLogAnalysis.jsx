@@ -169,13 +169,25 @@ export default function TrainingLogAnalysis() {
   const fetchLogData = async (logPath, trainInfo) => {
     try {
       // 确保日志文件路径是有效的URL
-      let csvUrl = logPath
-      
-      // 如果路径不是完整的URL，假设它是相对于当前域名的路径
-      if (!logPath.startsWith('http') && !logPath.startsWith('/api/')) {
-        // 获取当前域名
-        const currentOrigin = window.location.origin
-        csvUrl = `${currentOrigin}/${logPath.startsWith('/') ? logPath.substring(1) : logPath}`
+      let csvUrl = logPath;
+
+      if (typeof csvUrl === 'string') {
+        if (csvUrl.startsWith('./log/')) {
+          csvUrl = '/api/log/' + csvUrl.substring(6);
+        } else if (csvUrl.startsWith('log/')) {
+          csvUrl = '/api/log/' + csvUrl.substring(4);
+        } else if (csvUrl.startsWith('/log/')) {
+          csvUrl = '/api' + csvUrl;
+        }
+
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        if (csvUrl.startsWith('/api/')) {
+          const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+          csvUrl = cleanBaseUrl + csvUrl;
+        } else if (!csvUrl.startsWith('http')) {
+          const currentOrigin = window.location.origin;
+          csvUrl = `${currentOrigin}/${csvUrl.startsWith('/') ? csvUrl.substring(1) : csvUrl}`;
+        }
       }
       
       console.log('尝试获取日志文件:', logPath)

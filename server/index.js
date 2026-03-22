@@ -22,6 +22,7 @@ app.use(morgan('tiny'))
 
 // 对外暴露本地的 log 文件夹给前端下载 CSV 从而画曲线图
 app.use('/log', express.static(path.join(__dirname, '../log')))
+app.use('/api/log', express.static(path.join(__dirname, '../log')))
 
 const PORT = process.env.PORT || 4000
 

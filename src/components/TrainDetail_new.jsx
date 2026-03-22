@@ -442,11 +442,25 @@ export default function TrainDetail({ id: propId }) {
   // 获取日志文件数据
   const fetchLogData = async (logPath, trainInfo) => {
     try {
-      let csvUrl = logPath
+      let csvUrl = logPath;
 
-      if (!logPath.startsWith('http') && !logPath.startsWith('/api/')) {
-        const currentOrigin = window.location.origin
-        csvUrl = `${currentOrigin}/${logPath.startsWith('/') ? logPath.substring(1) : logPath}`
+      if (typeof csvUrl === 'string') {
+        if (csvUrl.startsWith('./log/')) {
+          csvUrl = '/api/log/' + csvUrl.substring(6);
+        } else if (csvUrl.startsWith('log/')) {
+          csvUrl = '/api/log/' + csvUrl.substring(4);
+        } else if (csvUrl.startsWith('/log/')) {
+          csvUrl = '/api' + csvUrl;
+        }
+
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        if (csvUrl.startsWith('/api/')) {
+          const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+          csvUrl = cleanBaseUrl + csvUrl;
+        } else if (!csvUrl.startsWith('http')) {
+          const currentOrigin = window.location.origin;
+          csvUrl = `${currentOrigin}/${csvUrl.startsWith('/') ? csvUrl.substring(1) : csvUrl}`;
+        }
       }
 
       const response = await fetch(csvUrl)
