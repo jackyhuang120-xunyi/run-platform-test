@@ -6,14 +6,14 @@ import numpy as np
 
 # ====== 配置信息 ======
 # 云服务器的 API 地址（请替换为您真实的服务器 IP 或域名）
-SERVER_URL = "http://your-server-ip:4000/api/trains/upload"
+SERVER_URL = "http://39.103.69.142:90/api/trains/upload"
 
 # 设备的 CSV 文件路径
 FILE_PATH = "test.csv"
 
 # 模拟的训练记录基础信息
 TRAIN_DATA = {
-    'uid': 1,               # 绑定的用户 ID
+    'uid': 101,               # 绑定的用户 ID
     'type': 1,              # 训练类型 (1:抗阻, 2:牵引, 3:折返)
     'part': 1,              # 训练部位
     'start_force': 10.5,    # 起始阻力 (kg)
@@ -151,8 +151,15 @@ def upload_record():
     # 将算好的数据并入上传 payload
     payload = {**TRAIN_DATA, **metrics}
     
+    # ====== 调试代码：查看即将发送的 Payload 内容 ======
+    print("\n[调试] 即将发送的业务参数清单:")
+    for key, value in payload.items():
+        print(f"  - {key}: {value} (类型: {type(value).__name__})")
+    print("-" * 30 + "\n")
+
     # 3. 发起 Multipart HTTP POST 请求
     print("2. 正在向云服务器发送加密数据流...")
+
     try:
         with open(FILE_PATH, 'rb') as f:
             files = { 'file': (os.path.basename(FILE_PATH), f, 'text/csv') }

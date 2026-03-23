@@ -29,37 +29,48 @@ const PORT = process.env.PORT || 4000
 // 配置 multer 处理边缘设备上传的大型 CSV 文件
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // 根据传入的 begin_time 或者当前时间，计算 YYYY-MM-DD
-    let begin_time = req.body.begin_time ? new Date(req.body.begin_time) : new Date()
-    if (isNaN(begin_time.getTime())) begin_time = new Date()
-    
-    const year = begin_time.getFullYear()
-    const month = String(begin_time.getMonth() + 1).padStart(2, '0')
-    const day = String(begin_time.getDate()).padStart(2, '0')
-    const dateStr = `${year}-${month}-${day}`
-    
-    // 我们将其放在上层目录 run-platform 下的 log 文件夹中
-    const logDir = path.join(__dirname, '../log', dateStr)
-    
-    // 如果文件夹不存在，同步级联创建
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true })
+    try {
+      // 根据传入的 begin_time 或者当前时间，计算 YYYY-MM-DD
+      let begin_time = req.body.begin_time ? new Date(req.body.begin_time) : new Date()
+      if (isNaN(begin_time.getTime())) begin_time = new Date()
+      
+      const year = begin_time.getFullYear()
+      const month = String(begin_time.getMonth() + 1).padStart(2, '0')
+      const day = String(begin_time.getDate()).padStart(2, '0')
+      const dateStr = `${year}-${month}-${day}`
+      
+      // 我们将其放在上层目录 run-platform 下的 log 文件夹中
+      const logDir = path.join(__dirname, '../log', dateStr)
+      
+      // 如果文件夹不存在，同步级联创建
+      if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true })
+      }
+      
+      cb(null, logDir)
+    } catch (err) {
+      console.error('[Multer Destination Error]', err)
+      cb(err)
     }
-    
-    cb(null, logDir)
   },
   filename: function (req, file, cb) {
-    // 使用 HH-MM-SS.csv 格式存放
-    let begin_time = req.body.begin_time ? new Date(req.body.begin_time) : new Date()
-    if (isNaN(begin_time.getTime())) begin_time = new Date()
-    
-    const hours = String(begin_time.getHours()).padStart(2, '0')
-    const minutes = String(begin_time.getMinutes()).padStart(2, '0')
-    const seconds = String(begin_time.getSeconds()).padStart(2, '0')
-    const timeStr = `${hours}-${minutes}-${seconds}`
-    
-    cb(null, `${timeStr}.csv`)
+    try {
+      // 使用 HH-MM-SS.csv 格式存放
+      let begin_time = req.body.begin_time ? new Date(req.body.begin_time) : new Date()
+      if (isNaN(begin_time.getTime())) begin_time = new Date()
+      
+      const hours = String(begin_time.getHours()).padStart(2, '0')
+      const minutes = String(begin_time.getMinutes()).padStart(2, '0')
+      const seconds = String(begin_time.getSeconds()).padStart(2, '0')
+      const timeStr = `${hours}-${minutes}-${seconds}`
+      
+      cb(null, `${timeStr}.csv`)
+    } catch (err) {
+      console.error('[Multer Filename Error]', err)
+      cb(err)
+    }
   }
+
 })
 
 const upload = multer({ storage: storage })
@@ -601,7 +612,7 @@ app.post('/api/trains/upload', verifyToken, upload.single('file'), async (req, r
       // 发现重复，删除对应的上传文件（防止日志堆积）
       if (req.file) fs.unlink(req.file.path, () => {});
       return res.status(409).json({ 
-        success: False, 
+        success: false, 
         error: 'duplicate_record', 
         message: '拒绝接收入库，该用户同一时间(begin_time)的训练记录已存在。' 
       });
