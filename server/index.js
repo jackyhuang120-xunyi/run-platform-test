@@ -580,7 +580,26 @@ app.post('/api/trains/upload', upload.single('file'), async (req, res) => {
     
     // 强制验证最基础的绑定关系
     if (!uid || !type || !data.begin_time) {
+      // 若因缺少核心参数被拒，尝试删除已经落盘的文件
+      if (req.file) fs.unlink(req.file.path, () => {});
       return res.status(400).json({ error: 'invalid_parameters', message: '缺少 uid, type, 或者 begin_time。这些是构建数据流的核心。' });
+    }
+
+    // ====== 防重传检测机制 ======
+    // 根据 uid 和 开始时间（begin_time）判断是否已经存在该训练记录
+    const [existing] = await pool.query(
+      'SELECT id FROM train_record WHERE uid = ? AND begin_time = ?', 
+      [uid, data.begin_time]
+    );
+    
+    if (existing && existing.length > 0) {
+      // 发现重复，删除对应的上传文件（防止日志堆积）
+      if (req.file) fs.unlink(req.file.path, () => {});
+      return res.status(409).json({ 
+        success: False, 
+        error: 'duplicate_record', 
+        message: '拒绝接收入库，该用户同一时间(begin_time)的训练记录已存在。' 
+      });
     }
 
     // 数据库入库的核心组装
