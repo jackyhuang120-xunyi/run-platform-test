@@ -114,12 +114,36 @@ def read_csv(path):
     return data
 
 # ====== 主上传逻辑 ======
+def get_auth_token():
+    login_url = SERVER_URL.replace("/trains/upload", "/login")
+    print(f"[*] 正在尝试登录获取 Token: {login_url}")
+    # 填入您在 server/.env 中设置的 ADMIN_USER 和 ADMIN_PASS（默认 admin/123456）
+    payload = {"username": "admin", "password": "123456"}
+    try:
+        res = requests.post(login_url, json=payload, timeout=10)
+        if res.status_code == 200:
+            token = res.json().get("token")
+            if token:
+                print("[*] 登录成功，拦截到有效 Token！")
+                return token
+        print(f"❌ 登录认证失败，请检查账号密码配置: {res.status_code} {res.text}")
+    except Exception as e:
+        print(f"❌ 网络请求登录失败: {e}")
+    return None
+
 def upload_record():
     if not os.path.exists(FILE_PATH):
         print(f"错误: 找不到文件 {FILE_PATH}。请检查路径。")
         return
 
-    # 1. 边缘计算模拟（先读取CSV，算出特征，再带着结果一起发送给后端）
+    # 1. 登录取 Token
+    token = get_auth_token()
+    if not token:
+        print("未获取到授权凭证，中断上传。")
+        return
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 2. 边缘计算模拟（先读取CSV，算出特征，再带着结果一起发送给后端）
     print("1. 正在读取并分析 CSV 特征数据...")
     csv_data = read_csv(FILE_PATH)
     metrics = calculate_metrics(csv_data, TRAIN_DATA)
@@ -127,26 +151,28 @@ def upload_record():
     # 将算好的数据并入上传 payload
     payload = {**TRAIN_DATA, **metrics}
     
-    # 2. 发起 Multipart HTTP POST 请求
-    print("2. 正在向云服务器发送数据流...")
+    # 3. 发起 Multipart HTTP POST 请求
+    print("2. 正在向云服务器发送加密数据流...")
     try:
         with open(FILE_PATH, 'rb') as f:
             files = { 'file': (os.path.basename(FILE_PATH), f, 'text/csv') }
-            response = requests.post(SERVER_URL, data=payload, files=files, timeout=30)
+            response = requests.post(SERVER_URL, data=payload, files=files, headers=headers, timeout=30)
             
-        # 3. 解析结果
+        # 4. 解析结果
         if response.status_code == 200:
             res_json = response.json()
             if res_json.get("success"):
                 print("===========================")
-                print("✅ 上传成功！")
+                print("✅ 上传并入库成功！")
                 print(f"云端记录 ID: {res_json.get('record_id')}")
                 print(f"云端日志路径: {res_json.get('log_path')}")
                 print("===========================")
             else:
                 print(f"❌ 业务处理失败: {res_json}")
+        elif response.status_code == 409:
+            print(f"⚠️ {response.json().get('message')}")
         else:
-            print(f"❌ 网络请求失败: HTTP {response.status_code}\n{response.text}")
+            print(f"❌ 网络异常报错: HTTP {response.status_code}\n{response.text}")
             
     except requests.exceptions.RequestException as e:
         print(f"❌ 连接服务器失败: {e}")

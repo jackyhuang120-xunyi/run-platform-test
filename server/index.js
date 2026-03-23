@@ -81,6 +81,20 @@ function handleValidation(req, res, next) {
   next()
 }
 
+// 通用的 JWT 鉴权中间件
+const verifyToken = (req, res, next) => {
+  const auth = req.headers.authorization;
+  if (!auth) return res.status(401).json({ error: 'unauthorized', message: '未授权，请提供有效的 Token' });
+  const token = auth.split(' ')[1];
+  try {
+    jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: 'invalid_token', message: 'Token 无效或已过期' });
+  }
+};
+
+
 // GET /api/trains?page=1&pageSize=20&uid=&type=&user_name=&group=
 // GET /api/trains/stats 获取训练统计数据（完整，不分页）
 app.get('/api/trains/stats', [
@@ -215,18 +229,13 @@ app.get('/api/trains', [
 })
 
 // export multiple records as CSV (protected)
-app.get('/api/trains/export', [
+app.get('/api/trains/export', verifyToken, [
   query('uid').optional().isInt().toInt(),
   query('type').optional().isInt().toInt(),
   query('start').optional().isString(),
   query('end').optional().isString(),
 ], handleValidation, async (req, res) => {
   try {
-    // simple auth: require valid JWT in Authorization header
-    const auth = req.headers.authorization
-    if (!auth) return res.status(401).json({ error: 'unauthorized' })
-    const token = auth.split(' ')[1]
-    try { jwt.verify(token, process.env.JWT_SECRET || 'secret') } catch (e) { return res.status(401).json({ error: 'invalid_token' }) }
 
     const uid = req.query.uid !== undefined ? Number(req.query.uid) : null
     const type = req.query.type !== undefined ? Number(req.query.type) : null
@@ -266,12 +275,8 @@ app.get('/api/trains/export', [
 })
 
 // export single record as CSV (protected)
-app.get('/api/trains/:id/export', [param('id').isInt().toInt()], handleValidation, async (req, res) => {
+app.get('/api/trains/:id/export', verifyToken, [param('id').isInt().toInt()], handleValidation, async (req, res) => {
   try {
-    const auth = req.headers.authorization
-    if (!auth) return res.status(401).json({ error: 'unauthorized' })
-    const token = auth.split(' ')[1]
-    try { jwt.verify(token, process.env.JWT_SECRET || 'secret') } catch (e) { return res.status(401).json({ error: 'invalid_token' }) }
 
     const id = Number(req.params.id)
     const sql = `SELECT tr.*, u.name as user_name FROM train_record tr LEFT JOIN \`user\` u ON u.id = tr.uid WHERE tr.id = ?`
@@ -372,8 +377,8 @@ app.get('/api/users/:id', [param('id').isInt().toInt()], handleValidation, async
   }
 })
 
-// == 新增：新建用户接口 ==
-app.post('/api/users', async (req, res) => {
+// == 新增：新建用户接口 (已通过 verifyToken 加固) ==
+app.post('/api/users', verifyToken, async (req, res) => {
   try {
     const { 
       name, gender, age, height, weight, phone, 
@@ -565,7 +570,7 @@ app.get('/api/rankings', [
 })
 
 // == 设备端双重上传接口 == (支持 FormData，包括 CSV 文件 + 大量算好的性能参数)
-app.post('/api/trains/upload', upload.single('file'), async (req, res) => {
+app.post('/api/trains/upload', verifyToken, upload.single('file'), async (req, res) => {
   try {
     const data = req.body;
     
